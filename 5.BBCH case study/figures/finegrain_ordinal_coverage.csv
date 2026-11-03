@@ -1,0 +1,6 @@
+crop_name,level,n_stages,bbch_id,alignment,interpolated,unmapped
+citrus,principal,8,8,0,0,0
+citrus,secondary,35,35,0,0,0
+oilseedFlax,principal,9,9,0,0,0
+oilseedFlax,secondary,81,54,27,0,0
+oilseedRape,secondary,28,0,24,4,0

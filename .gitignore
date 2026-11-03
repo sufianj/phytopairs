@@ -1,0 +1,56 @@
+*.error
+*.h5
+
+*.npy
+
+*.pt
+*.tar
+*.zarr
+*.zip
+.ipynb_checkpoints/
+BSV Sample Construction/PDF_URLS.txt
+BSV Sample Construction/Previous Iterations Data/
+BSV Sample Construction/bsv_images/
+BSV Sample Construction/processed_urls.txt
+BSV Sample Construction/test_bulletin.pdf
+BSV Sample Construction/test_images/
+PRIVE/
+Pairings/
+__pycache__/
+bsv_images/
+cache and embeddings/
+checkpoints/
+checkpoints/models--*
+jupyter_logs/
+test_images/
+BSV Sample Construction/bsv_images_gt_2404/
+BSV Sample Construction/bsv_images_gt_tables_docling/
+BSV Sample Construction/processed_urls_gt_tables_docling.txt
+BSV Sample Construction/bsv_reviewer_gt_textimage_900.html
+BSV Sample Construction/processed_urls_gt_tables_docling.txt
+BSV Sample Construction/bsv_reviewer_gt_textimage_900.html
+BSV Sample Construction/bsv_images_auto_textimage/
+*.pt
+variant_b_checkpoints*/
+BSV Sample Construction/Automatic Construction/bsv_images_auto_textimage/
+BSV Sample Construction/Ground Truth/bsv_images_gt_2404/
+BSV Sample Construction/Negative_Mining/negatives_textimage.jsonl
+BSV Sample Construction/Negative_Mining/negatives_texttable.jsonl
+*.pt.tmp
+
+
+# LaTeX build artifacts
+*.aux
+storyline.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.nav
+*.snm
+*.vrb

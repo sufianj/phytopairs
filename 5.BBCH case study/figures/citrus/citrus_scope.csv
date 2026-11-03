@@ -1,0 +1,5 @@
+crop_name,level,lang,n_photos,n_models,n_stages_in_pool,n_stages_with_gt,chance_R@1
+citrus,principal,fr,81,30,8,8,0.125
+citrus,principal,en,81,30,8,8,0.125
+citrus,secondary,fr,81,30,35,34,0.02857142857142857
+citrus,secondary,en,81,30,35,34,0.02857142857142857

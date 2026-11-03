@@ -1,0 +1,5 @@
+crop_name,level,kind,n_candidates,n_photos_scored,n_photos_dropped,n_models
+citrus,principal,bbch,8,81,0,30
+citrus,secondary,bbch,35,81,0,30
+oilseedFlax,secondary,ti,81,9,2,30
+oilseedRape,secondary,ti,28,1,1,30
