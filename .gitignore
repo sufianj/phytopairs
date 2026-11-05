@@ -8,6 +8,25 @@
 *.zarr
 *.zip
 .ipynb_checkpoints/
+# Local source PDFs, hydrated assets, and runtime caches are not part of the release.
+data/local/
+results/runs/
+4.Finetuning/vars/
+5.BBCH case study/vars/
+
+# Content-bearing construction outputs are regenerated from the manifests/PDFs.
+3.Dataset Construction/Automatic Construction/bsv_dataset_*.jsonl
+3.Dataset Construction/Automatic Construction/bsv_pairs_*.jsonl
+3.Dataset Construction/Automatic Construction/bsv_images_*/
+3.Dataset Construction/Ground Truth/bsv_dataset_*.jsonl
+3.Dataset Construction/Ground Truth/bsv_pairs_*.jsonl
+3.Dataset Construction/Ground Truth/bsv_gt_*.jsonl
+3.Dataset Construction/Ground Truth/bsv_images_*/
+3.Dataset Construction/Ground Truth/bsv_reviewer_*.html
+3.Dataset Construction/Scripts/generate_reviewer_gt_*.py
+3.Dataset Construction/Scripts/processed_bulletins_table_fix.txt
+
+# Legacy pre-section paths retained to avoid re-adding files from older checkouts.
 BSV Sample Construction/PDF_URLS.txt
 BSV Sample Construction/Previous Iterations Data/
 BSV Sample Construction/bsv_images/

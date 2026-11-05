@@ -1,0 +1,1 @@
+Download the citrus photographs to `data/external/bbch_citrus/photos` from the public INRAE Phenological Stages project [https://forge.inrae.fr/bsv/phenologicalstages/-/tree/master/citrus/images?ref_type=heads](https://forge.inrae.fr/bsv/phenologicalstages/-/tree/master/citrus/images?ref_type=heads)

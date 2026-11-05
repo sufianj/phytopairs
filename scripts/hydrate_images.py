@@ -1,10 +1,12 @@
-"""Restore image crops referenced by a JSONL dataset from its source PDFs."""
+"""Restore GT images referenced by a JSONL dataset from its source PDFs."""
 
 import argparse
+import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import re
 import sys
 import tempfile
 
@@ -12,10 +14,8 @@ import pymupdf as fitz
 from PIL import Image as PILImage
 
 
-DEFAULT_PDF_DIRS = (
-    Path("/projects/agrifutur/bsv_pdfs"),
-    Path("/projects/agrifutur/bsv_pdfs_all"),
-)
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_PDF_DIRS = (ROOT / "data" / "local" / "pdfs",)
 
 
 def records_in(path):
@@ -40,9 +40,12 @@ def find_pdfs(directories, bulletin_ids):
         if not directory.is_dir():
             print(f"Warning: PDF directory does not exist: {directory}", file=sys.stderr)
             continue
-        for path in sorted(directory.rglob("*")):
-            if path.is_file() and path.suffix.lower() == ".pdf" and path.stem in bulletin_ids:
-                result.setdefault(path.stem, path)
+        for root, dirnames, filenames in os.walk(directory):
+            dirnames.sort()
+            for name in sorted(filenames):
+                path = Path(root) / name
+                if path.suffix.lower() == ".pdf" and path.stem in bulletin_ids and path.is_file():
+                    result.setdefault(path.stem, path)
     return result
 
 
@@ -60,7 +63,7 @@ def coordinate(image, name):
     return number
 
 
-def crop_image(document, image, destination, dpi, jpeg_quality):
+def page_number_for(document, image):
     page_number = image.get("page")
     if isinstance(page_number, bool):
         raise ValueError("Image page must be a 1-based page number")
@@ -70,6 +73,48 @@ def crop_image(document, image, destination, dpi, jpeg_quality):
         raise ValueError("Image page must be a 1-based page number") from exc
     if page_number < 1 or page_number > document.page_count:
         raise ValueError(f"Page {page_number} is outside the PDF (1-{document.page_count})")
+    return page_number
+
+
+def check_pdf_source(record, pdf_path, digest_cache, required=True):
+    recipes = [record[key] for key in ("text_reproduction", "text_reconstruction") if key in record]
+    digests = [recipe.get("pdf_sha256") for recipe in recipes if isinstance(recipe, dict)]
+    if required and (not digests or len(digests) != len(recipes) or any(not isinstance(d, str) or not re.fullmatch(r"[0-9a-f]{64}", d) for d in digests)):
+        raise ValueError("a valid source PDF SHA-256 in the text reproduction recipe is required")
+    if not digests:
+        return
+    if pdf_path not in digest_cache:
+        digest = hashlib.sha256()
+        with pdf_path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+        digest_cache[pdf_path] = digest.hexdigest()
+    if any(d != digest_cache[pdf_path] for d in digests):
+        raise ValueError(f"source PDF SHA-256 does not match the recipe: {pdf_path}")
+
+
+def embedded_image(document, bulletin_id, image):
+    """Extract the exact image bytes selected by the parser's filename/xref."""
+    filename = image.get("filename")
+    if not isinstance(filename, str):
+        raise ValueError("image.filename is required for embedded-image extraction")
+    match = re.fullmatch(re.escape(bulletin_id) + r"_p(\d+)_(\d+)\.([A-Za-z0-9]+)", filename)
+    if not match or Path(filename).name != filename:
+        raise ValueError(f"image filename does not encode the bulletin, page, and PDF xref: {filename!r}")
+    page_number = page_number_for(document, image)
+    if int(match.group(1)) != page_number:
+        raise ValueError("image filename page does not match image.page")
+    xref = int(match.group(2))
+    if xref not in {item[0] for item in document[page_number - 1].get_images(full=True)}:
+        raise ValueError(f"image xref {xref} is not referenced on page {page_number}")
+    extracted = document.extract_image(xref)
+    if not extracted or extracted.get("ext", "").lower() != match.group(3).lower():
+        raise ValueError(f"image xref {xref} does not match filename extension")
+    return extracted["image"]
+
+
+def crop_image(document, image, destination, dpi, jpeg_quality):
+    page_number = page_number_for(document, image)
 
     left = coordinate(image, "left")
     top = coordinate(image, "top")
@@ -102,15 +147,33 @@ def crop_image(document, image, destination, dpi, jpeg_quality):
     else:
         raise ValueError(f"Unsupported image extension {suffix!r}; use .jpg, .jpeg, .jpx, or .png")
 
+    return image_bytes
+
+
+def write_image(destination, image_bytes, overwrite=False):
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(image_bytes)
+    if destination.exists():
+        if destination.is_file() and destination.read_bytes() == image_bytes:
+            return
+        if not overwrite:
+            raise FileExistsError(f"image already exists and differs: {destination}; use --overwrite-images to replace it")
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=destination.parent, prefix=f".{destination.name}.", suffix=".tmp", delete=False) as out:
+            temp_path = Path(out.name)
+            out.write(image_bytes)
+        os.replace(temp_path, destination)
+        temp_path = None
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Restore image crops for JSONL records using each record's bulletin_id, "
-            "image.page, and image bounding box (PDF point coordinates)."
+            "Restore GT images from embedded PDF objects using the xrefs in image.filename. "
+            "The source PDF must match the SHA-256 in the text reproduction recipe."
         )
     )
     parser.add_argument("input", type=Path, help="Input JSONL dataset")
@@ -130,12 +193,14 @@ def main():
         type=Path,
         help=(
             "PDF root to search recursively; may be repeated. Defaults to "
-            "/projects/agrifutur/bsv_pdfs and /projects/agrifutur/bsv_pdfs_all."
+            "data/local/pdfs inside the repository."
         ),
     )
-    parser.add_argument("--dpi", type=int, default=200, help="Rendered crop resolution (default: 200 DPI)")
+    parser.add_argument("--method", choices=("embedded", "rendered"), default="embedded", help="extract embedded image bytes (default), or render the page bounding box")
+    parser.add_argument("--overwrite-images", action="store_true", help="replace existing images that differ")
+    parser.add_argument("--dpi", type=int, default=200, help="Rendered crop resolution (rendered method only; default: 200 DPI)")
     parser.add_argument(
-        "--jpeg-quality", type=int, default=95, help="JPEG quality from 1 to 100 (default: 95)"
+        "--jpeg-quality", type=int, default=95, help="JPEG quality for rendered crops, from 1 to 100 (default: 95)"
     )
     args = parser.parse_args()
 
@@ -160,6 +225,7 @@ def main():
 
     output.parent.mkdir(parents=True, exist_ok=True)
     document_by_id = {}
+    digest_cache = {}
     failures = 0
     restored = 0
     skipped = 0
@@ -183,18 +249,24 @@ def main():
                 try:
                     if pdf_path is None:
                         raise FileNotFoundError(f"No PDF found for bulletin_id {bulletin_id!r}")
+                    check_pdf_source(record, pdf_path, digest_cache, required=args.method == "embedded")
                     document = document_by_id.get(bulletin_id)
                     if document is None:
                         document = fitz.open(pdf_path)
                         document_by_id[bulletin_id] = document
 
                     filename = image.get("filename")
-                    if filename:
+                    if args.method == "embedded":
+                        image_bytes = embedded_image(document, bulletin_id, image)
+                        image_name = filename
+                    elif filename:
                         image_name = Path(str(filename)).name
                     else:
                         page = image.get("page", "unknown")
                         image_name = f"{bulletin_id}_p{page}_{line_number}.jpeg"
-                    crop_image(document, image, image_dir / image_name, args.dpi, args.jpeg_quality)
+                    if args.method == "rendered":
+                        image_bytes = crop_image(document, image, image_dir / image_name, args.dpi, args.jpeg_quality)
+                    write_image(image_dir / image_name, image_bytes, overwrite=args.overwrite_images)
                     restored += 1
                 except Exception as exc:
                     failures += 1

@@ -8,10 +8,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
-DEFAULT_PDF_DIRS = (
-    Path("/projects/agrifutur/bsv_pdfs"),
-    Path("/projects/agrifutur/bsv_pdfs_all"),
-)
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_PDF_DIRS = (ROOT / "data" / "local" / "pdfs",)
 
 INTEGRAL_PHRASE = "reproduction intégrale de ce bulletin autorisée"
 PARTIAL_PHRASE = "reproduction partielle autorisée"
@@ -103,7 +101,7 @@ def main() -> None:
         type=Path,
         help=(
             "PDF root to search recursively; may be repeated. Defaults to "
-            "/projects/agrifutur/bsv_pdfs and /projects/agrifutur/bsv_pdfs_all."
+            "data/local/pdfs inside the repository."
         ),
     )
     args = parser.parse_args()

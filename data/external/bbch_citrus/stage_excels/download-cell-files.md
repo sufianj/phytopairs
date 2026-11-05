@@ -1,0 +1,1 @@
+Download the citrus excels to `data/external/bbch_citrus/stage_excels` from [https://forge.inrae.fr/bsv/phenologicalstages/-/tree/master/citrus/cellfie?ref_type=heads](https://forge.inrae.fr/bsv/phenologicalstages/-/tree/master/citrus/cellfie?ref_type=heads)

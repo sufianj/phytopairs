@@ -36,7 +36,8 @@ def main():
         if unpinned:
             warnings.append(f"{unpinned} corpus rows have no pinned SHA-256")
     for path in ROOT.rglob("*"):
-        if not path.is_file() or "data/local" in path.as_posix() or ".git" in path.parts:
+        if (not path.is_file() or "data/local" in path.as_posix()
+                or ".git" in path.parts or ".ipynb_checkpoints" in path.parts):
             continue
         if path == Path(__file__).resolve():
             continue
@@ -45,6 +46,19 @@ def main():
                 text = path.read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 continue
+            if path.suffix.lower() == ".ipynb":
+                try:
+                    notebook = json.loads(text)
+                except json.JSONDecodeError:
+                    errors.append(f"{path.relative_to(ROOT)}: invalid notebook JSON")
+                    continue
+                # Saved output includes historical workstation logs; only notebook source
+                # cells can contain active paths that affect reproduction.
+                text = "\n".join(
+                    "".join(cell.get("source", []))
+                    for cell in notebook.get("cells", [])
+                    if cell.get("cell_type") in {"code", "markdown"}
+                )
             if WORKSTATION_PATHS.search(text):
                 errors.append(f"{path.relative_to(ROOT)}: contains a workstation-specific absolute path")
     if errors:

@@ -5,15 +5,25 @@ validation buttons (GOOD / BORDERLINE / BAD), comment field,
 export to JSON, progress counter, and reorganised heuristic panel
 (EXTRACTION rules vs PAIRING rules).
 
-Run from inside BSV Sample Construction/:
+Run from any working directory; set PHYTOPAIRS_REVIEW_* to select review inputs.
     python3 generate_reviewer.py
 """
 
 import json, os
+from pathlib import Path
 
-PAIRS_FILE = "bsv_pairs_edit_test.jsonl"
-IMG_DIR    = "bsv_images_edit_test"
-HTML_OUT   = "bsv_reviewer_edit_test.html"
+ROOT = Path(__file__).resolve().parents[2]
+DATASET_ROOT = ROOT / "3.Dataset Construction"
+GT_DIR = DATASET_ROOT / "Ground Truth"
+PAIRS_FILE = os.environ.get(
+    "PHYTOPAIRS_REVIEW_PAIRS", str(GT_DIR / "bsv_pairs_gt_texttable_remaining.jsonl")
+)
+IMG_DIR = os.environ.get(
+    "PHYTOPAIRS_REVIEW_IMAGES", str(GT_DIR / "bsv_images_gt_tables_docling")
+)
+HTML_OUT = os.environ.get(
+    "PHYTOPAIRS_REVIEW_HTML", str(GT_DIR / "bsv_reviewer_gt_texttable.html")
+)
 
 # ---------------------------------------------------------------------------
 # Load pairs
@@ -23,7 +33,7 @@ with open(PAIRS_FILE, encoding="utf-8") as f:
     pairs = [json.loads(l) for l in f]
 
 url_lookup = {}
-PDF_URLS_PATH = "/projects/agrifutur/yabusaqe/BSV Sample Construction/PDFs Download/PDF_URLS.txt"
+PDF_URLS_PATH = DATASET_ROOT / "PDFs Download" / "PDF_URLS.txt"
 if os.path.exists(PDF_URLS_PATH):
     with open(PDF_URLS_PATH, encoding="utf-8") as f:
         for line in f:

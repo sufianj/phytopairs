@@ -5,7 +5,7 @@ validation buttons (GOOD / BORDERLINE / BAD), comment field,
 export to JSON, progress counter, and reorganised heuristic panel
 (EXTRACTION rules vs PAIRING rules).
 
-Run from inside BSV Sample Construction/:
+Run from the repository root or any working directory inside the repository:
     python3 generate_reviewer.py
 """
 

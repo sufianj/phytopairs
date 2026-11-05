@@ -31,6 +31,7 @@ import argparse
 import io
 import os
 import sys
+from pathlib import Path
 from collections import Counter
 
 import fitz               # PyMuPDF
@@ -39,7 +40,8 @@ from PIL import Image as PILImage
 
 # Import your real bsv_parser.py so "kept" counts use your ACTUAL production
 # heuristics, not a third, possibly-divergent reimplementation of them.
-sys.path.insert(0, "/projects/agrifutur/yabusaqe/BSV Sample Construction/Parsers")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "3.Dataset Construction" / "Parsers"))
 try:
     import bsv_parser
     HAVE_PARSER = True

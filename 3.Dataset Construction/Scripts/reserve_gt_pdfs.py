@@ -19,38 +19,50 @@ Usage:
 import os
 import random
 import json
+import argparse
+from pathlib import Path
 
-DIR_A = "/projects/agrifutur/bsv_pdfs"        # ~1000 PDFs
-DIR_B = "/projects/agrifutur/bsv_pdfs_all"    # the rest, no overlap with DIR_A
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_PDF_DIR = ROOT / "data" / "local" / "pdfs"
 N_RESERVE = 3205
 SEED = 42  # fixed seed so this exact selection is reproducible if regenerated
-OUT_MANIFEST = "/projects/agrifutur/yabusaqe/BSV Sample Construction/Ground Truth/gt_reserved_pdfs.jsonl"
+OUT_MANIFEST = ROOT / "3.Dataset Construction" / "Ground Truth" / "gt_reserved_pdfs.jsonl"
 
 
 def list_pdfs(directory):
     return sorted(f for f in os.listdir(directory) if f.endswith(".pdf"))
 
 
+def manifest_directory(directory):
+    """Store repository directories relative to the repository root."""
+    path = Path(directory)
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def main():
-    files_a = list_pdfs(DIR_A)
-    files_b = list_pdfs(DIR_B)
+    parser = argparse.ArgumentParser(description="Reserve source PDFs for manual test-set curation.")
+    parser.add_argument(
+        "--pdf-dir", action="append", type=Path, default=None,
+        help="PDF directory (repeatable); defaults to data/local/pdfs.",
+    )
+    parser.add_argument("--output", type=Path, default=OUT_MANIFEST)
+    args = parser.parse_args()
 
-    print(f"{DIR_A}: {len(files_a)} PDFs")
-    print(f"{DIR_B}: {len(files_b)} PDFs")
-
-    # Defensive check, not assumed: confirm there really is no filename
-    # overlap between the two folders before treating them as one pool
-    names_a = set(files_a)
-    names_b = set(files_b)
-    overlap = names_a & names_b
-    if overlap:
-        print(f"WARNING: {len(overlap)} filenames appear in BOTH directories, "
-              f"first few: {list(overlap)[:5]}")
-        print("Stopping, since this contradicts the 'nothing is duplicated' assumption.")
-        return
-    print("Confirmed: no overlapping filenames between the two directories.")
-
-    combined = [(f, DIR_A) for f in files_a] + [(f, DIR_B) for f in files_b]
+    pdf_dirs = args.pdf_dir if args.pdf_dir is not None else [DEFAULT_PDF_DIR]
+    combined = []
+    for directory in pdf_dirs:
+        files = list_pdfs(directory)
+        print(f"{directory}: {len(files)} PDFs")
+        combined.extend((filename, str(directory)) for filename in files)
+    by_filename = {}
+    for filename, directory in combined:
+        if filename in by_filename:
+            raise ValueError(f"Duplicate PDF filename across source directories: {filename}")
+        by_filename[filename] = directory
+    combined = list(by_filename.items())
     total = len(combined)
     print(f"Combined pool: {total} PDFs")
 
@@ -62,16 +74,14 @@ def main():
     random.shuffle(shuffled)
     reserved = shuffled[:N_RESERVE]
 
-    from_a = sum(1 for _, d in reserved if d == DIR_A)
-    from_b = sum(1 for _, d in reserved if d == DIR_B)
-    print(f"Reserved {len(reserved)} PDFs for GT: {from_a} from {DIR_A}, {from_b} from {DIR_B}")
+    print(f"Reserved {len(reserved)} PDFs for GT across {len(pdf_dirs)} source directory/ies")
 
-    os.makedirs(os.path.dirname(OUT_MANIFEST), exist_ok=True)
-    with open(OUT_MANIFEST, "w", encoding="utf-8") as f:
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as f:
         for fname, directory in reserved:
-            f.write(json.dumps({"filename": fname, "source_dir": directory}) + "\n")
+            f.write(json.dumps({"filename": fname, "source_dir": manifest_directory(directory)}) + "\n")
 
-    print(f"\nManifest written to: {OUT_MANIFEST}")
+    print(f"\nManifest written to: {args.output}")
     print("This manifest is the reservation record only, no PDF was moved or copied.")
     print("Use it to (a) build the GT batch's input list, and (b) exclude these exact "
           "filenames from the automatic 20k-corpus construction run.")

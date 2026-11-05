@@ -54,11 +54,11 @@ def export_one(metadata, reranked_path, pair_ids_by_global, output_path, thresho
 
 def main():
     parser = argparse.ArgumentParser(description="Export content-free pair-ID false-negative masks.")
-    parser.add_argument("--metadata", default="data/local/metadata/df_combined_metadata.pkl")
-    parser.add_argument("--image-similarity", default="data/local/metadata/reranked_image_image.pkl")
-    parser.add_argument("--table-similarity", default="data/local/metadata/reranked_table_table.pkl")
-    parser.add_argument("--image-pairs", default="data/local/source/Automatic Construction/bsv_pairs_auto_textimage.jsonl")
-    parser.add_argument("--table-pairs", default="data/local/source/Automatic Construction/bsv_pairs_auto_texttable.jsonl")
+    parser.add_argument("--metadata", default="4.Finetuning/Shared_data/df_combined_metadata.pkl")
+    parser.add_argument("--image-similarity", default="4.Finetuning/Shared_data/reranked_image_image.pkl")
+    parser.add_argument("--table-similarity", default="4.Finetuning/Shared_data/reranked_table_table.pkl")
+    parser.add_argument("--image-pairs", default="3.Dataset Construction/Automatic Construction/bsv_pairs_auto_textimage.jsonl")
+    parser.add_argument("--table-pairs", default="3.Dataset Construction/Automatic Construction/bsv_pairs_auto_texttable.jsonl")
     parser.add_argument("--output-dir", default="data/manifests")
     parser.add_argument("--threshold", type=float, default=0.8)
     args = parser.parse_args()

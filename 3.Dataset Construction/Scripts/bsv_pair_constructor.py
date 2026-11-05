@@ -32,24 +32,19 @@ import json
 import os
 import random
 import re
+from pathlib import Path
 
 
 # ---------------------------------------------------------------------------
 # Configuration — edit these paths
 # ---------------------------------------------------------------------------
 
-# NOTE: paths below are from before the folder reorganization and the
-# GT / Automatic Construction split. This file's own main() is 
-# superseded by generate_pairs() being imported directly elsewhere.
-# for this script to be run standalone,
-# update IN_JSONL to the  current raw dataset location
-# (e.g. "Automatic Construction/bsv_dataset_auto_textimage.jsonl" or
-# "Ground Truth/bsv_dataset_gt_2404.jsonl"), and update the three
-# OUT_* paths to a real destination folder.
-IN_JSONL   = "/projects/agrifutur/yabusaqe/BSV Sample Construction/TODO_SET_INPUT_PATH/bsv_dataset.jsonl"
-OUT_PAIRS  = "/projects/agrifutur/yabusaqe/BSV Sample Construction/TODO_SET_OUTPUT_PATH/bsv_pairs.jsonl"
-SAMPLE_OUT_500  = "/projects/agrifutur/yabusaqe/BSV Sample Construction/TODO_SET_OUTPUT_PATH/bsv_pairs_sample_500.jsonl"
-SAMPLE_OUT_1000 = "/projects/agrifutur/yabusaqe/BSV Sample Construction/TODO_SET_OUTPUT_PATH/bsv_pairs_sample_1000.jsonl"
+DATASET_ROOT = Path(__file__).resolve().parents[2] / "3.Dataset Construction"
+AUTO_DIR = DATASET_ROOT / "Automatic Construction"
+IN_JSONL   = AUTO_DIR / "bsv_dataset_auto_textimage.jsonl"
+OUT_PAIRS  = AUTO_DIR / "bsv_pairs_auto_textimage.jsonl"
+SAMPLE_OUT_500  = AUTO_DIR / "bsv_pairs_auto_textimage_sample_500.jsonl"
+SAMPLE_OUT_1000 = AUTO_DIR / "bsv_pairs_auto_textimage_sample_1000.jsonl"
 SAMPLE_N        = 50
 SEED       = 42
 

@@ -15,21 +15,25 @@ Checkpointed by bulletin_id, safe to interrupt and resume.
 import json
 import os
 import sys
-sys.path.insert(0, "/projects/agrifutur/yabusaqe/BSV Sample Construction/Parsers")
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+DATASET_ROOT = ROOT / "3.Dataset Construction"
+sys.path.insert(0, str(DATASET_ROOT / "Parsers"))
 import bsv_parser
 import pdfplumber
 
-BASE = "/projects/agrifutur/yabusaqe/BSV Sample Construction"
-INPUT_FILE      = f"{BASE}/Automatic Construction/bsv_pairs_auto_textimage.jsonl"
-OUTPUT_FILE     = f"{BASE}/Automatic Construction/bsv_pairs_auto_textimage_corrected.jsonl"
-CHECKPOINT_FILE = f"{BASE}/Scripts/processed_bulletins_table_fix.txt"
-PDF_DIRS        = ["/projects/agrifutur/bsv_pdfs", "/projects/agrifutur/bsv_pdfs_all"]
+BASE = DATASET_ROOT
+INPUT_FILE      = BASE / "Automatic Construction" / "bsv_pairs_auto_textimage.jsonl"
+OUTPUT_FILE     = BASE / "Automatic Construction" / "bsv_pairs_auto_textimage_corrected.jsonl"
+CHECKPOINT_FILE = BASE / "Scripts" / "processed_bulletins_table_fix.txt"
+PDF_DIRS        = [ROOT / "data" / "local" / "pdfs"]
 
 
 def find_pdf(bulletin_id):
     for d in PDF_DIRS:
-        p = os.path.join(d, bulletin_id + ".pdf")
-        if os.path.exists(p):
+        p = d / (bulletin_id + ".pdf")
+        if p.exists():
             return p
     return None
 
@@ -67,7 +71,7 @@ def append_checkpoint(bulletin_id):
 
 
 def main():
-    with open(INPUT_FILE, encoding="utf-8") as f:
+    with INPUT_FILE.open(encoding="utf-8") as f:
         all_pairs = [json.loads(line) for line in f]
 
     pairs_by_bulletin = {}
@@ -85,7 +89,7 @@ def main():
     stats = {"kept": 0, "dropped_no_section": 0, "pdf_not_found": 0, "errors": 0}
 
     out_mode = "a" if done_bulletins else "w"
-    with open(OUTPUT_FILE, out_mode, encoding="utf-8") as out_f:
+    with OUTPUT_FILE.open(out_mode, encoding="utf-8") as out_f:
         for i, bulletin_id in enumerate(remaining, 1):
             path = find_pdf(bulletin_id)
             if not path:

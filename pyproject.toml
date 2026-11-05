@@ -1,0 +1,18 @@
+[project]
+name = "phytopairs-release"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "Pillow>=10",
+  "PyMuPDF>=1.24",
+  "pdfplumber>=0.11",
+  "pdf2docx>=0.5",
+  "python-docx>=1.1",
+  "docling>=2.0",
+  "easyocr>=1.7",
+  "openpyxl>=3.1",
+  "pandas>=2.2",
+]
+
+[tool.setuptools]
+packages = []

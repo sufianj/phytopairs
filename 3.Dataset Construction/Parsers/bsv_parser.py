@@ -463,7 +463,7 @@ def parse_structure(pdf_path, table_bboxes=None):
     ]
   # drop capital recovery using easyocr for headers missing their first letter
     try:
-        with open("/projects/agrifutur/yabusaqe/BSV Sample Construction/french_words.txt", encoding="utf-8") as _f:
+        with (Path(__file__).resolve().parent / "french_words.txt").open(encoding="utf-8") as _f:
             _french_words = set(w.strip().lower() for w in _f if w.strip())
     except Exception:
         _french_words = set()
@@ -1356,27 +1356,36 @@ def parse_pdf(pdf_path, out_img_dir, url=None):
 
     return [{**meta, **sec} for sec in sections]
 
-import os
-print(os.getcwd())
-print(os.listdir(os.getcwd()))
+if __name__ == "__main__":
+    import os
+    import fitz
 
-import fitz
-from collections import Counter
-doc = fitz.open("/projects/agrifutur/bsv_pdfs_all/BSV_NA_VIGNE_CHARENTES_02_20190409_cle8ac81e.pdf")
-for page_num, page in enumerate(doc, 1):
-    for block in page.get_text("dict")["blocks"]:
-        if block["type"] != 0: continue
-        for line in block["lines"]:
-            for span in line["spans"]:
-                text = span["text"].strip()
-                bold = bool(span["flags"] & 16) or "Bold" in span.get("font","")
-                if bold and span["size"] <= 13 and len(text) > 3:
-                    print(f"p{page_num} size={span['size']:.1f} last={text[-1]!r} text={text!r}")
+    pdf_path = (
+        Path(__file__).resolve().parents[2]
+        / "data" / "local" / "pdfs"
+        / "BSV_NA_VIGNE_CHARENTES_02_20190409_cle8ac81e.pdf"
+    )
+    if not pdf_path.is_file():
+        raise FileNotFoundError(
+            f"Sample PDF not found at {pdf_path}; hydrate data/local/pdfs first."
+        )
+    print(os.getcwd())
+    print(os.listdir(os.getcwd()))
+    doc = fitz.open(pdf_path)
+    for page_num, page in enumerate(doc, 1):
+        for block in page.get_text("dict")["blocks"]:
+            if block["type"] != 0:
+                continue
+            for line in block["lines"]:
+                for span in line["spans"]:
+                    text = span["text"].strip()
+                    bold = bool(span["flags"] & 16) or "Bold" in span.get("font", "")
+                    if bold and span["size"] <= 13 and len(text) > 3:
+                        print(f"p{page_num} size={span['size']:.1f} last={text[-1]!r} text={text!r}")
 
-text = "Mildiou sur grappe – juin 2020"
-print(is_footer(text))
-print(is_bad_header(text))
-print(is_credit_line(text))
-
+    text = "Mildiou sur grappe – juin 2020"
+    print(is_footer(text))
+    print(is_bad_header(text))
+    print(is_credit_line(text))
 
 

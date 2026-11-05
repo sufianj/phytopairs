@@ -4,15 +4,25 @@ Adds: validation buttons (GOOD / BORDERLINE / BAD), comment field,
 export to JSON, progress counter, and reorganised heuristic panel
 (EXTRACTION rules vs PAIRING rules).
 
-Run from inside BSV Sample Construction/:
+Run from any working directory; defaults target the text-image review data.
     python3 generate_reviewer.py
 """
 
 import json, os
+from pathlib import Path
 
-PAIRS_FILE = "bsv_pairs_sample_1000.jsonl"
-IMG_DIR    = "bsv_images"
-HTML_OUT   = "bsv_reviewer.html"
+ROOT = Path(__file__).resolve().parents[2]
+DATASET_ROOT = ROOT / "3.Dataset Construction"
+AUTO_DIR = DATASET_ROOT / "Automatic Construction"
+PAIRS_FILE = os.environ.get(
+    "PHYTOPAIRS_REVIEW_PAIRS", str(AUTO_DIR / "bsv_pairs_auto_textimage.jsonl")
+)
+IMG_DIR = os.environ.get(
+    "PHYTOPAIRS_REVIEW_IMAGES", str(AUTO_DIR / "bsv_images_auto_textimage")
+)
+HTML_OUT = os.environ.get(
+    "PHYTOPAIRS_REVIEW_HTML", str(AUTO_DIR / "bsv_reviewer_auto_textimage.html")
+)
 
 # ---------------------------------------------------------------------------
 # Load pairs
@@ -22,7 +32,7 @@ with open(PAIRS_FILE, encoding="utf-8") as f:
     pairs = [json.loads(l) for l in f]
 
 url_lookup = {}
-PDF_URLS_PATH = "/projects/agrifutur/yabusaqe/BSV Sample Construction/PDFs Download/PDF_URLS.txt"
+PDF_URLS_PATH = DATASET_ROOT / "PDFs Download" / "PDF_URLS.txt"
 if os.path.exists(PDF_URLS_PATH):
     with open(PDF_URLS_PATH, encoding="utf-8") as f:
         for line in f:
